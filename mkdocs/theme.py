@@ -112,4 +112,5 @@ class Theme(object):
         env = jinja2.Environment(loader=loader)
         env.filters['tojson'] = filters.tojson
         env.filters['debug'] = filters.debug
+        env.filters['debugObj'] = filters.debugObj
         return env
