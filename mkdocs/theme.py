@@ -111,4 +111,5 @@ class Theme(object):
         loader = jinja2.FileSystemLoader(self.dirs)
         env = jinja2.Environment(loader=loader)
         env.filters['tojson'] = filters.tojson
+        env.filters['debug'] = filters.debug
         return env

@@ -95,6 +95,7 @@ def serve(config_file=None, dev_addr=None, strict=None, theme=None,
     tempdir = tempfile.mkdtemp()
 
     def builder():
+        log.info("Development Branch: cjsheets/mkdocs")
         log.info("Building documentation...")
         config = load_config(
             config_file=config_file,
