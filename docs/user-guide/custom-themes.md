@@ -20,7 +20,7 @@ and their usage.
 ## Creating a custom theme
 
 The bare minimum required for a custom theme is a `main.html` [Jinja2 template]
-file. This should be placed in a directory which will be the `theme_dir` and it
+file. This should be placed in a directory which will be the `custom_dir` and it
 should be created next to the `mkdocs.yml` configuration file. Within
 `mkdocs.yml`, specify the theme `custom_dir` option and set it to the name of
 the directory containing `main.html`. For example, given this example project
@@ -365,7 +365,7 @@ makes no modifications to the Jinja environment. A complete solution using the
 provided index file is the responsability of the theme.
 
 When `search_index_only` is set to `false`, then the search plugin modifies the
-Jinja environment by adding its own `temaplates` directory (with a lower
+Jinja environment by adding its own `templates` directory (with a lower
 precedence than the theme) and adds its scripts to the `extra_javascript` config
 setting.
 

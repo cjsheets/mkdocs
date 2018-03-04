@@ -23,6 +23,29 @@ The current and past members of the MkDocs team.
 
 ## Development Version
 
+* Expand {sha} and {version} in gh-deploy commit message (#1410).
+* Compress `sitemap.xml` (#1130).
+* Defer loading JS scripts (#1380).
+* Add a title attribute to the search input (#1379).
+* Update RespondJS to latest version (#1398).
+* Always load Google Analytics over HTTPS (#1397).
+* Improve scrolling frame rate (#1394).
+* Provide more version info. (#1393).
+* Refactor `writing-your-docs.md` (#1392).
+* Workaround Safari bug when zooming to &lt; 100% (#1389).
+* Remove addition of `clicky` class to body and animations. (#1387).
+* Prevent search plugin from reinjecting `extra_javascript` files (#1388).
+* Refactor `copy_media_files` util function for more flexibility (#1370).
+* Remove PyPI Deployment Docs (#1360).
+* Update links to Python-Markdown library (#1360).
+* Document how to generate manpages for MkDocs commands (#686).
+
+## Version 0.17.2 (2017-11-15)
+
+* Bugfix: Correct `extra_*` config setting regressions (#1335 & #1336).
+
+## Version 0.17.1 (2017-10-30)
+
 * Bugfix: Support `repo_url` with missing ending slash. (#1321).
 * Bugfix: Add length support to `mkdocs.toc.TableOfContext` (#1325).
 * Bugfix: Add some theme specific settings to the search plugin for third party
@@ -40,10 +63,12 @@ own custom behaviors. See the included documentation for a full explanation of
 the API.
 
 The previously built-in search functionality has been removed and wrapped in a
-plugin (named "search") with no changes in behavior. If no plugins setting is
-defined in the config, then the `search` plugin will be included by default.
-See the [configuration][plugin_config] documentation for information on
-overriding the default.
+plugin (named "search") with no changes in behavior. When MkDocs builds, the
+search index is now written to `search/search_index.json` instead of
+`mkdocs/search_index.json`. If no plugins setting is defined in the config,
+then the `search` plugin will be included by default. See the
+[configuration][plugin_config] documentation for information on overriding the
+default.
 
 [Plugin API]: ../user-guide/plugins.md
 [plugin_config]: ../user-guide/configuration.md#plugins

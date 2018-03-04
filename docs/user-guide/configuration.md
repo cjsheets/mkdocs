@@ -321,13 +321,13 @@ documentation.
 The following table demonstrates how the URLs used on the site differ when
 setting `use_directory_urls` to `true` or `false`.
 
-Source file  | Generated HTML       | use_directory_urls=true  | use_directory_urls=false
+Source file  | Generated HTML       | use_directory_urls: true  | use_directory_urls: false
 ------------ | -------------------- | ------------------------ | ------------------------
 index.md     | index.html           | /                        | /index.html
 api-guide.md | api-guide/index.html | /api-guide/              | /api-guide/index.html
 about.md     | about/index.html     | /about/                  | /about/index.html
 
-The default style of `use_directory_urls=true` creates more user friendly URLs,
+The default style of `use_directory_urls: true` creates more user friendly URLs,
 and is usually what you'll want to use.
 
 The alternate style can occasionally be useful if you want your documentation to
@@ -447,11 +447,11 @@ plugins: []
 
 [custom themes]: custom-themes.md
 [variables that are available]: custom-themes.md#template-variables
-[pymdk-extensions]: https://pythonhosted.org/Markdown/extensions/index.html
-[pymkd]: https://pythonhosted.org/Markdown/
-[smarty]: https://pythonhosted.org/Markdown/extensions/smarty.html
-[exts]:https://pythonhosted.org/Markdown/extensions/index.html
-[3rd]: https://github.com/waylan/Python-Markdown/wiki/Third-Party-Extensions
+[pymdk-extensions]: https://python-markdown.github.io/extensions/
+[pymkd]: https://python-markdown.github.io/
+[smarty]: https://python-markdown.github.io/extensions/smarty/
+[exts]: https://python-markdown.github.io/extensions/
+[3rd]: https://github.com/Python-Markdown/markdown/wiki/Third-Party-Extensions
 [configuring pages and navigation]: writing-your-docs.md#configure-pages-and-navigation
 [theme_dir]: styling-your-docs.md#using-the-theme_dir
 [styling your docs]: styling-your-docs.md
