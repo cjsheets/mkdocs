@@ -7,17 +7,25 @@ A basic guide to deploying your docs to various hosting providers
 ## GitHub Pages
 
 If you host the source code for a project on [GitHub], you can easily use
-[GitHub Pages] to host the documentation for your project. After you `checkout`
-the primary working branch (usually `master`) of the git repository where you
+[GitHub Pages] to host the documentation for your project. There are two basic
+types of GitHub Pages sites: [Project Pages] sites, and [User and Organization
+Pages] sites. They are nearly identical but have some important differences,
+which require a different work flow when deploying.
+
+### Project Pages
+
+Project Pages sites are simpler as the site files get deployed to a branch
+within the project repository (`gh-pages` by default). After you `checkout` the
+primary working branch (usually `master`) of the git repository where you
 maintain the source documentation for your project, run the following command:
 
 ```sh
 mkdocs gh-deploy
 ```
 
-That's it! Behind the scenes, MkDocs will build your docs and use the [ghp-import]
-tool to commit them to the gh-pages branch and push the gh-pages branch to
-GitHub.
+That's it! Behind the scenes, MkDocs will build your docs and use the
+[ghp-import] tool to commit them to the `gh-pages` branch and push the
+`gh-pages` branch to GitHub.
 
 Use `mkdocs gh-deploy --help` to get a full list of options available for the
 `gh-deploy` command.
@@ -29,12 +37,80 @@ files locally.
 
 !!! warning
 
-    You should never edit files in your gh-pages branch by hand if you're using
-    the `gh-deploy` command because you will lose your work.
+    You should never edit files in your pages repository by hand if you're using
+    the `gh-deploy` command because you will lose your work the next time you
+    run the command.
+
+### Organization and User Pages
+
+User and Organization Pages sites are not tied to a specific project, and the
+site files are deployed to the `master` branch in a dedicated repository named
+with the GitHub account name. Therefore, you need working copies of two
+repositories on our local system. For example, consider the following file
+structure:
+
+```no-highlight
+my-project/
+    mkdocs.yml
+    docs/
+orgname.github.io/
+```
+
+After making and verifying updates to your project you need to change
+directories to the `orgname.github.io` repository and call the
+`mkdocs gh-deploy` command from there:
+
+```sh
+cd ../orgname.github.io/
+mkdocs gh-deploy --config-file ../my-project/mkdocs.yml --remote-branch master
+```
+
+Note that you need to explicitly point to the `mkdocs.yml` configuration file as
+it is no longer in the current working directory. You also need to inform the
+deploy script to commit to the `master` branch. You may override the default
+with the [remote_branch] configuration setting, but if you forget to change
+directories before running the deploy script, it will commit to the `master`
+branch of your project, which you probably don't want.
+
+Be aware that you will not be able to review the built site before it is pushed
+to GitHub. Therefore, you may want to verify any changes you make to the docs
+beforehand by using the `build` or `serve` commands and reviewing the built
+files locally.
+
+!!! warning
+
+    You should never edit files in your pages repository by hand if you're using
+    the `gh-deploy` command because you will lose your work the next time you
+    run the command.
+
+### Custom Domains
+
+GitHub Pages includes support for using a [Custom Domain] for your site. In
+addition to the steps documented by GitHub, you need to take one additional step
+so that MkDocs will work with your custom domain. You need to add a `CNAME` file
+to the root of your [docs_dir]. The file must contain a single bare domain or
+subdomain on a single line (see MkDocs' own [CNAME file] as an example). You may
+create the file manually, or use GitHub's web interface to set up the custom
+domain (under Settings / Custom Domain). If you use the web interface, GitHub
+will create the `CNAME` file for you and save it to the root of your "pages"
+branch. So that the file does not get removed the next time you deploy, you need
+to copy the file to your `docs_dir`. With the file properly included in your
+`docs_dir`, MkDocs will include the file in your built site and push it to your
+"pages" branch each time you run the `gh-deploy` command.
+
+If you are having problems getting a custom domain to work, see GitHub's
+documentation on [Troubleshooting custom domains].
 
 [GitHub]: https://github.com/
 [GitHub Pages]: https://pages.github.com/
+[Project Pages]: https://help.github.com/articles/user-organization-and-project-pages/#project-pages-sites
+[User and Organization Pages]: https://help.github.com/articles/user-organization-and-project-pages/#user-and-organization-pages-sites
 [ghp-import]: https://github.com/davisp/ghp-import
+[remote_branch]: ./configuration.md#remote_branch
+[Custom Domain]: https://help.github.com/articles/adding-or-removing-a-custom-domain-for-your-github-pages-site
+[docs_dir]: ./configuration.md#docs_dir
+[CNAME file]: https://github.com/mkdocs/mkdocs/blob/master/docs/CNAME
+[Troubleshooting custom domains]: https://help.github.com/articles/troubleshooting-custom-domains/
 
 ## Read the Docs
 
@@ -56,7 +132,7 @@ public repository.
 [rtd]: https://readthedocs.org/
 [instructions]: https://read-the-docs.readthedocs.io/en/latest/getting_started.html#in-markdown
 [features]: http://read-the-docs.readthedocs.io/en/latest/features.html
-[theme]: /user-guide/styling-your-docs.md
+[theme]: ./styling-your-docs.md#readthedocs
 
 ## Other Providers
 
@@ -101,4 +177,4 @@ deploying to [GitHub](#github-pages) but only on a custom domain. Other web
 servers may be configured to use it but the feature won't always be available.
 See the documentation for your server of choice for more information.
 
-[site_dir]: ./configuration/#site_dir
+[site_dir]: ./configuration.md#site_dir

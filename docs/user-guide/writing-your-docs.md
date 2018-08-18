@@ -22,7 +22,8 @@ docs/
 
 By convention your project homepage should always be named `index`. Any of the
 following extensions may be used for your Markdown source files: `markdown`,
-`mdown`, `mkdn`, `mkd`, `md`.
+`mdown`, `mkdn`, `mkd`, `md`. All Markdown files included in your documentation
+directory will be rendered in the built site regardless of any settings.
 
 You can also create multi-page documentation, by creating several Markdown
 files:
@@ -65,61 +66,95 @@ nested URLs, like so:
 /license/
 ```
 
+### Index pages
+
+When a directory is requested, by default, most web servers will return an index
+file (usually named `index.html`) contained within that directory if one exists.
+For that reason, the homepage in all of the examples above has been named
+`index.md`, which MkDocs will render to `index.html` when building the site.
+
+Many repository hosting sites provide special treatment for README files by
+displaying the contents of the README file when browsing the contents of a
+directory. Therefore, MkDocs will allow you to name your index pages as
+`README.md` instead of `index.md`. In that way, when users are browsing your
+source code, the repository host can display the index page of that directory as
+it is a README file. However, when MkDocs renders your site, the file will be
+renamed to `index.html` so that the server will serve it as a proper index file.
+
+If both an `index.md` file and a `README.md` file are found in the same
+directory, then the `index.md` file is used and the `README.md` file is
+ignored.
+
 ### Configure Pages and Navigation
 
-The [pages configuration](configuration.md#pages) in your `mkdocs.yml` defines
-which pages are built by MkDocs and how they appear in the documentation
-navigation. If not provided, the pages configuration will be automatically
-created by discovering all the Markdown files in the [documentation
-directory](configuration.md#docs_dir). An automatically created pages
-configuration will always be sorted alphanumerically by file name. You will need
-to manually define your pages configuration if you would like your pages sorted
-differently.
+The [nav](configuration.md#nav) configuration setting in your `mkdocs.yml` file
+defines which pages are included in the global site navigation menu as well as
+the structure of that menu. If not provided, the navigation will be
+automatically created by discovering all the Markdown files in the
+[documentation directory](configuration.md#docs_dir). An automatically created
+navigation configuration will always be sorted alphanumerically by file name
+(except that index files will always be listed first within a sub-section). You
+will need to manually define your navigation configuration if you would like
+your navigation menu sorted differently.
 
-A simple pages configuration looks like this:
+A simple navigation configuration looks like this:
 
 ```no-highlight
-pages:
+nav:
 - 'index.md'
 - 'about.md'
 ```
 
-With this example we will build two pages at the top level and they will
-automatically have their titles inferred from the filename. Assuming `docs_dir`
-has the default value, `docs`, the source files for this documentation would be
-`docs/index.md` and `docs/about.md`. To provide a custom name for these pages,
-they can be added before the filename.
+All paths in the navigation configuration must be relative to the `docs_dir`
+configuration option. If that option is set to the default value, `docs`, the
+source files for the above configuration would be located at `docs/index.md` and
+`docs/about.md`.
+
+The above example will result in two navigation items being created at the top
+level and with their titles inferred from the contents of the file (or the
+filename if no title is defined within the file). To define a custom title for
+the pages, the title can be added before the filename.
 
 ```no-highlight
-pages:
+nav:
 - Home: 'index.md'
 - About: 'about.md'
 ```
 
-Subsections can be created by listing related pages together under a section
-title. For example:
+Note that if a title is defined for a page in the navigation, that title will be
+used throughout the site for that page and will override any title defined
+within the page itself.
+
+Navigation sub-sections can be created by listing related pages together under a
+section title. For example:
 
 ```no-highlight
-pages:
+nav:
 - Home: 'index.md'
 - User Guide:
-    - 'Writing your docs': 'user-guide/writing-your-docs.md'
-    - 'Styling your docs': 'user-guide/styling-your-docs.md'
+    - 'Writing your docs': 'writing-your-docs.md'
+    - 'Styling your docs': 'styling-your-docs.md'
 - About:
-    - 'License': 'about/license.md'
-    - 'Release Notes': 'about/release-notes.md'
+    - 'License': 'license.md'
+    - 'Release Notes': 'release-notes.md'
 ```
 
-With the above configuration we have three top level sections: Home, User Guide
-and About. Then under User Guide we have two pages, Writing your docs and
-Styling your docs. Under the About section we also have two pages, License and
-Release Notes.
+With the above configuration we have three top level items: "Home", "User Guide"
+and "About." "Home" is a link to the homepage for the site. Under the "User
+Guide" section two pages are listed: "Writing your docs" and "Styling your
+docs." Under the "About" section two more pages are listed: "License" and
+"Release Notes."
 
 Note that a section cannot have a page assigned to it. Sections are only
 containers for child pages and sub-sections. You may nest sections as deeply as
 you like. However, be careful that you don't make it too difficult for your
 users to navigate through the site navigation by over-complicating the nesting.
 While sections may mirror your directly structure, they do not have to.
+
+Any pages not listed in your navigation configuration will still be rendered and
+included with the built site, however, they will not be linked from the global
+navigation and will not be included in the `previous` and `next` links. Such
+pages will be "hidden" unless linked to directly.
 
 ## Writing with Markdown
 
@@ -139,7 +174,7 @@ configuration setting for details on how to enable extensions.
 MkDocs includes some extensions by default, which are highlighted below.
 
 [Python-Markdown]: https://python-markdown.github.io/
-[md]: http://daringfireball.net/projects/markdown/
+[md]: https://daringfireball.net/projects/markdown/
 [differences]: https://python-markdown.github.io/#differences
 [syntax]: https://daringfireball.net/projects/markdown/syntax
 [extensions]: https://python-markdown.github.io/extensions/
@@ -149,7 +184,7 @@ MkDocs includes some extensions by default, which are highlighted below.
 
 MkDocs allows you to interlink your documentation by using regular Markdown
 [links]. However, there are a few additional benefits to formatting those links
-specifically for MkDocs as outlines below.
+specifically for MkDocs as outlined below.
 
 [links]: https://daringfireball.net/projects/markdown/syntax#link
 
@@ -280,45 +315,24 @@ also be previewed if you're working on the documentation with a Markdown editor.
 
 [GitHub pages CNAME file]: https://help.github.com/articles/using-a-custom-domain-with-github-pages/
 
+#### Linking from raw HTML
+
+Markdown allows document authors to fall back to raw HTML when the Markdown
+syntax does not meets the author's needs. MkDocs does not limit Markdown in this
+regard. However, as all raw HTML is ignored by the Markdown parser, MkDocs is
+not able to validate or convert links contained in raw HTML. When including
+internal links within raw HTML, you will need to manually format the link
+appropriately for the rendered document.
+
 ### Meta-Data
 
-MkDocs includes support for [MultiMarkdown] style meta-data (often called
-front-matter). Meta-data consists of a series of keywords and values defined at
-the beginning of a Markdown document like this:
-
-```no-highlight
-Title:   My Document
-Summary: A brief description of my document.
-Authors: Waylan Limberg
-         Tom Christie
-Date:    January 23, 2018
-blank-value:
-some_url: http://example.com
-
-This is the first paragraph of the document.
-```
-
-The keywords are case-insensitive and may consist of letters, numbers,
-underscores and dashes and must end with a colon. The values consist of anything
-following the colon on the line and may even be blank.
-
-If a line is indented by 4 or more spaces, that line is assumed to be an
-additional line of the value for the previous keyword. A keyword may have as
-many lines as desired.
-
-The first blank line ends all meta-data for the document. Therefore, the first
-line of a document must not be blank.
-
-Alternatively, you may use YAML style deliminators to mark the start and/or end
-of your meta-data. When doing so, the first line of your document must be `---`.
-The meta-data ends at the first blank line or the first line containing an end
-deliminator (either `---` or `...`), whichever comes first. Even though YAML
-deliminators are supported, meta-data is not parsed as YAML.
-
-All meta-data is stripped from the document prior to being processing by
-Python-Markdown. The keys and values are passed by MkDocs to the page template.
-Therefore, if a theme includes support, the values of any keys can be displayed
-on the page. See the documentation for your theme for information about which
+MkDocs includes support for both YAML and MultiMarkdown style meta-data (often
+called front-matter). Meta-data consists of a series of keywords and values
+defined at the beginning of a Markdown document, which are stripped from the
+document prior to it being processing by Python-Markdown. The key/value pairs
+are passed by MkDocs to the page template. Therefore, if a theme includes
+support, the values of any keys can be displayed on the page or used to control
+the page rendering. See your theme's documentation for information about which
 keys may be supported, if any.
 
 In addition to displaying information in a template, MkDocs includes support for
@@ -341,7 +355,7 @@ specific page. The following keys are supported:
     MkDocs will attempt to determine the title of a document in the following
     ways, in order:
 
-    1. A title defined in the [pages] configuration setting for a document.
+    1. A title defined in the [nav] configuration setting for a document.
     2. A title defined in the `title` meta-data key of a document.
     3. A level 1 Markdown header on the first line of the document body.
     4. The filename of a document.
@@ -349,8 +363,79 @@ specific page. The following keys are supported:
     Upon finding a title for a page, MkDoc does not continue checking any
     additional sources in the above list.
 
+#### YAML Style Meta-Data
+
+YAML style meta-data consists of [YAML] key/value pairs wrapped in YAML style
+deliminators to mark the start and/or end of the meta-data. The first line of
+a document must be `---`. The meta-data ends at the first line containing an
+end deliminator (either `---` or `...`). The content between the deliminators is
+parsed as [YAML].
+
+```no-highlight
+---
+title: My Document
+summary: A brief description of my document.
+authors:
+    - Waylan Limberg
+    - Tom Christie
+date: 2018-07-10
+some_url: https://example.com
+---
+This is the first paragraph of the document.
+```
+
+YAML is able to detect data types. Therefore, in the above example, the values
+of `title`, `summary` and `some_url` are strings, the value of `authors` is a
+list of strings and the value of `date` is a `datetime.date` object. Note that
+the YAML keys are case sensitive and MkDocs expects keys to be all lowercase.
+The top level of the YAML must be a collection of key/value pairs, which results
+in a Python `dict` being returned. If any other type is returned or the YAML
+parser encounters an error, then MkDocs does not recognize the section as
+meta-data, the page's `meta` attribute will be empty, and the section is not
+removed from the document.
+
+#### MultiMarkdown Style Meta-Data
+
+MultiMarkdown style meta-data uses a format first introduced by the
+[MultiMarkdown] project. The data consists of a series of keywords and values
+defined at the beginning of a Markdown document, like this:
+
+```no-highlight
+Title:   My Document
+Summary: A brief description of my document.
+Authors: Waylan Limberg
+         Tom Christie
+Date:    January 23, 2018
+blank-value:
+some_url: https://example.com
+
+This is the first paragraph of the document.
+```
+
+The keywords are case-insensitive and may consist of letters, numbers,
+underscores and dashes and must end with a colon. The values consist of anything
+following the colon on the line and may even be blank.
+
+If a line is indented by 4 or more spaces, that line is assumed to be an
+additional line of the value for the previous keyword. A keyword may have as
+many lines as desired. All lines are joined into a single string.
+
+The first blank line ends all meta-data for the document. Therefore, the first
+line of a document must not be blank.
+
+!!! note
+
+    MkDocs does not support YAML style deliminators (`---` or `...`) for
+    MultiMarkdown style meta-data. In fact, MkDocs relies on the the presence or
+    absence of the deliminators to determine whether YAML style meta-data or
+    MultiMarkdown style meta-data is being used. If the deliminators are
+    detected, but the content between the deliminators is not valid YAML
+    meta-data, MkDocs does not attempt to parse the content as MultiMarkdown
+    style meta-data.
+
+[YAML]: http://yaml.org
 [MultiMarkdown]: http://fletcherpenney.net/MultiMarkdown_Syntax_Guide#metadata
-[pages]: configuration.md#pages
+[nav]: configuration.md#nav
 
 ### Tables
 

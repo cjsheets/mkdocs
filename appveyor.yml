@@ -4,9 +4,6 @@ environment:
     - TOXENV: py27-integration
     - TOXENV: py27-min-req
     - TOXENV: py27-unittests
-    - TOXENV: py33-integration
-    - TOXENV: py33-min-req
-    - TOXENV: py33-unittests
     - TOXENV: py34-integration
     - TOXENV: py34-min-req
     - TOXENV: py34-unittests
@@ -16,6 +13,9 @@ environment:
     - TOXENV: py36-integration
     - TOXENV: py36-min-req
     - TOXENV: py36-unittests
+    - TOXENV: py37-integration
+    - TOXENV: py37-min-req
+    - TOXENV: py37-unittests
     - TOXENV: flake8
 init:
   - "ECHO %TOXENV%"

@@ -186,8 +186,9 @@ class CLITests(unittest.TestCase):
         logger = logging.getLogger('mkdocs')
         self.assertEqual(logger.level, logging.INFO)
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
-    def test_build_clean(self, mock_build):
+    def test_build_clean(self, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['build', '--clean'], catch_exceptions=False)
@@ -198,8 +199,9 @@ class CLITests(unittest.TestCase):
         self.assertTrue('dirty' in kwargs)
         self.assertFalse(kwargs['dirty'])
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
-    def test_build_dirty(self, mock_build):
+    def test_build_dirty(self, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['build', '--dirty'], catch_exceptions=False)
@@ -296,8 +298,9 @@ class CLITests(unittest.TestCase):
             site_dir='custom'
         )
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
-    def test_build_verbose(self, mock_build):
+    def test_build_verbose(self, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['build', '--verbose'], catch_exceptions=False)
@@ -307,8 +310,9 @@ class CLITests(unittest.TestCase):
         logger = logging.getLogger('mkdocs')
         self.assertEqual(logger.level, logging.DEBUG)
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
-    def test_build_quiet(self, mock_build):
+    def test_build_quiet(self, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['build', '--quiet'], catch_exceptions=False)
@@ -342,6 +346,8 @@ class CLITests(unittest.TestCase):
         self.assertEqual(g_kwargs['message'], None)
         self.assertTrue('force' in g_kwargs)
         self.assertEqual(g_kwargs['force'], False)
+        self.assertTrue('ignore_version' in g_kwargs)
+        self.assertEqual(g_kwargs['ignore_version'], False)
         self.assertEqual(mock_build.call_count, 1)
         b_args, b_kwargs = mock_build.call_args
         self.assertTrue('dirty' in b_kwargs)
@@ -352,9 +358,10 @@ class CLITests(unittest.TestCase):
             remote_name=None
         )
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
     @mock.patch('mkdocs.commands.gh_deploy.gh_deploy', autospec=True)
-    def test_gh_deploy_clean(self, mock_gh_deploy, mock_build):
+    def test_gh_deploy_clean(self, mock_gh_deploy, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['gh-deploy', '--clean'], catch_exceptions=False)
@@ -366,9 +373,10 @@ class CLITests(unittest.TestCase):
         self.assertTrue('dirty' in kwargs)
         self.assertFalse(kwargs['dirty'])
 
+    @mock.patch('mkdocs.config.load_config', autospec=True)
     @mock.patch('mkdocs.commands.build.build', autospec=True)
     @mock.patch('mkdocs.commands.gh_deploy.gh_deploy', autospec=True)
-    def test_gh_deploy_dirty(self, mock_gh_deploy, mock_build):
+    def test_gh_deploy_dirty(self, mock_gh_deploy, mock_build, mock_load_config):
 
         result = self.runner.invoke(
             cli.cli, ['gh-deploy', '--dirty'], catch_exceptions=False)
@@ -463,5 +471,21 @@ class CLITests(unittest.TestCase):
         g_args, g_kwargs = mock_gh_deploy.call_args
         self.assertTrue('force' in g_kwargs)
         self.assertEqual(g_kwargs['force'], True)
+        self.assertEqual(mock_build.call_count, 1)
+        self.assertEqual(mock_load_config.call_count, 1)
+
+    @mock.patch('mkdocs.config.load_config', autospec=True)
+    @mock.patch('mkdocs.commands.build.build', autospec=True)
+    @mock.patch('mkdocs.commands.gh_deploy.gh_deploy', autospec=True)
+    def test_gh_deploy_ognore_version(self, mock_gh_deploy, mock_build, mock_load_config):
+
+        result = self.runner.invoke(
+            cli.cli, ['gh-deploy', '--ignore-version'], catch_exceptions=False)
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(mock_gh_deploy.call_count, 1)
+        g_args, g_kwargs = mock_gh_deploy.call_args
+        self.assertTrue('ignore_version' in g_kwargs)
+        self.assertEqual(g_kwargs['ignore_version'], True)
         self.assertEqual(mock_build.call_count, 1)
         self.assertEqual(mock_load_config.call_count, 1)

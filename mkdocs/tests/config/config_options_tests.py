@@ -1,11 +1,16 @@
+# coding=UTF-8
+
 from __future__ import unicode_literals
 
 import os
+import sys
 import unittest
+from mock import patch
 
 import mkdocs
 from mkdocs import utils
 from mkdocs.config import config_options
+from mkdocs.config.base import Config
 
 
 class OptionallyRequiredTest(unittest.TestCase):
@@ -146,7 +151,7 @@ class URLTest(unittest.TestCase):
 
     def test_valid_url(self):
 
-        url = "http://mkdocs.org"
+        url = "https://mkdocs.org"
 
         option = config_options.URL()
         value = option.validate(url)
@@ -172,7 +177,6 @@ class RepoURLTest(unittest.TestCase):
         option = config_options.RepoURL()
         config = {'repo_url': "https://github.com/mkdocs/mkdocs"}
         option.post_validation(config, 'repo_url')
-        self.assertEqual(config['repo_url'], config['repo_url'])
         self.assertEqual(config['repo_name'], "GitHub")
 
     def test_repo_name_bitbucket(self):
@@ -180,15 +184,20 @@ class RepoURLTest(unittest.TestCase):
         option = config_options.RepoURL()
         config = {'repo_url': "https://bitbucket.org/gutworth/six/"}
         option.post_validation(config, 'repo_url')
-        self.assertEqual(config['repo_url'], config['repo_url'])
         self.assertEqual(config['repo_name'], "Bitbucket")
+
+    def test_repo_name_gitlab(self):
+
+        option = config_options.RepoURL()
+        config = {'repo_url': "https://gitlab.com/gitlab-org/gitlab-ce/"}
+        option.post_validation(config, 'repo_url')
+        self.assertEqual(config['repo_name'], "GitLab")
 
     def test_repo_name_custom(self):
 
         option = config_options.RepoURL()
         config = {'repo_url': "https://launchpad.net/python-tuskarclient"}
         option.post_validation(config, 'repo_url')
-        self.assertEqual(config['repo_url'], config['repo_url'])
         self.assertEqual(config['repo_name'], "Launchpad")
 
     def test_edit_uri_github(self):
@@ -204,6 +213,13 @@ class RepoURLTest(unittest.TestCase):
         config = {'repo_url': "https://bitbucket.org/gutworth/six/"}
         option.post_validation(config, 'repo_url')
         self.assertEqual(config['edit_uri'], 'src/default/docs/')
+
+    def test_edit_uri_gitlab(self):
+
+        option = config_options.RepoURL()
+        config = {'repo_url': "https://gitlab.com/gitlab-org/gitlab-ce/"}
+        option.post_validation(config, 'repo_url')
+        self.assertEqual(config['edit_uri'], 'edit/master/docs/')
 
     def test_edit_uri_custom(self):
 
@@ -260,19 +276,107 @@ class DirTest(unittest.TestCase):
         self.assertRaises(config_options.ValidationError,
                           option.validate, [])
 
-    def test_doc_dir_is_config_dir(self):
+    def test_dir_unicode(self):
+        cfg = Config(
+            [('dir', config_options.Dir())],
+            config_file_path=os.path.join(os.path.abspath('.'), 'mkdocs.yml'),
+        )
 
         test_config = {
-            'config_file_path': os.path.join(os.path.abspath('.'), 'mkdocs.yml'),
-            'docs_dir': '.'
+            'dir': 'юникод'
         }
 
-        docs_dir = config_options.Dir()
+        cfg.load_dict(test_config)
 
-        test_config['docs_dir'] = docs_dir.validate(test_config['docs_dir'])
+        fails, warns = cfg.validate()
 
-        self.assertRaises(config_options.ValidationError,
-                          docs_dir.post_validation, test_config, 'docs_dir')
+        self.assertEqual(len(fails), 0)
+        self.assertEqual(len(warns), 0)
+        self.assertIsInstance(cfg['dir'], utils.text_type)
+
+    def test_dir_filesystemencoding(self):
+        cfg = Config(
+            [('dir', config_options.Dir())],
+            config_file_path=os.path.join(os.path.abspath('.'), 'mkdocs.yml'),
+        )
+
+        test_config = {
+            'dir': 'Übersicht'.encode(encoding=sys.getfilesystemencoding())
+        }
+
+        cfg.load_dict(test_config)
+
+        fails, warns = cfg.validate()
+
+        if utils.PY3:
+            # In PY3 string_types does not include byte strings so validation fails
+            self.assertEqual(len(fails), 1)
+            self.assertEqual(len(warns), 0)
+        else:
+            # In PY2 string_types includes byte strings so validation passes
+            # This test confirms that the byte string is properly decoded
+            self.assertEqual(len(fails), 0)
+            self.assertEqual(len(warns), 0)
+            self.assertIsInstance(cfg['dir'], utils.text_type)
+
+    def test_dir_bad_encoding_fails(self):
+        cfg = Config(
+            [('dir', config_options.Dir())],
+            config_file_path=os.path.join(os.path.abspath('.'), 'mkdocs.yml'),
+        )
+
+        test_config = {
+            'dir': 'юникод'.encode(encoding='ISO 8859-5')
+        }
+
+        cfg.load_dict(test_config)
+
+        fails, warns = cfg.validate()
+
+        if sys.platform.startswith('win') and not utils.PY3:
+            # PY2 on Windows seems to be able to decode anything we give it.
+            # But that just means less possable errors for those users so we allow it.
+            self.assertEqual(len(fails), 0)
+        else:
+            self.assertEqual(len(fails), 1)
+        self.assertEqual(len(warns), 0)
+
+    def test_config_dir_prepended(self):
+        base_path = os.path.abspath('.')
+        cfg = Config(
+            [('dir', config_options.Dir())],
+            config_file_path=os.path.join(base_path, 'mkdocs.yml'),
+        )
+
+        test_config = {
+            'dir': 'foo'
+        }
+
+        cfg.load_dict(test_config)
+
+        fails, warns = cfg.validate()
+
+        self.assertEqual(len(fails), 0)
+        self.assertEqual(len(warns), 0)
+        self.assertIsInstance(cfg['dir'], utils.text_type)
+        self.assertEqual(cfg['dir'], os.path.join(base_path, 'foo'))
+
+    def test_dir_is_config_dir_fails(self):
+        cfg = Config(
+            [('dir', config_options.Dir())],
+            config_file_path=os.path.join(os.path.abspath('.'), 'mkdocs.yml'),
+        )
+
+        test_config = {
+            'dir': '.'
+        }
+
+        cfg.load_dict(test_config)
+
+        fails, warns = cfg.validate()
+
+        self.assertEqual(len(fails), 1)
+        self.assertEqual(len(warns), 0)
 
 
 class SiteDirTest(unittest.TestCase):
@@ -282,12 +386,23 @@ class SiteDirTest(unittest.TestCase):
         site_dir = config_options.SiteDir()
         docs_dir = config_options.Dir()
 
-        config['config_file_path'] = os.path.join(os.path.abspath('..'), 'mkdocs.yml')
+        fname = os.path.join(os.path.abspath('..'), 'mkdocs.yml')
 
         config['docs_dir'] = docs_dir.validate(config['docs_dir'])
         config['site_dir'] = site_dir.validate(config['site_dir'])
-        site_dir.post_validation(config, 'site_dir')
-        return True  # No errors were raised
+
+        schema = [
+            ('site_dir', site_dir),
+            ('docs_dir', docs_dir),
+        ]
+        cfg = Config(schema, fname)
+        cfg.load_dict(config)
+        failed, warned = cfg.validate()
+
+        if failed:
+            raise config_options.ValidationError(failed)
+
+        return True
 
     def test_doc_dir_in_site_dir(self):
 
@@ -411,11 +526,11 @@ class ThemeTest(unittest.TestCase):
                           option.validate, config)
 
 
-class PagesTest(unittest.TestCase):
+class NavTest(unittest.TestCase):
 
     def test_old_format(self):
 
-        option = config_options.Pages()
+        option = config_options.Nav()
         self.assertRaises(
             config_options.ValidationError,
             option.validate,
@@ -424,7 +539,7 @@ class PagesTest(unittest.TestCase):
 
     def test_provided_dict(self):
 
-        option = config_options.Pages()
+        option = config_options.Nav()
         value = option.validate([
             'index.md',
             {"Page": "page.md"}
@@ -435,7 +550,7 @@ class PagesTest(unittest.TestCase):
 
     def test_provided_empty(self):
 
-        option = config_options.Pages()
+        option = config_options.Nav()
         value = option.validate([])
         self.assertEqual(None, value)
 
@@ -443,13 +558,13 @@ class PagesTest(unittest.TestCase):
 
     def test_invalid_type(self):
 
-        option = config_options.Pages()
+        option = config_options.Nav()
         self.assertRaises(config_options.ValidationError,
                           option.validate, {})
 
     def test_invalid_config(self):
 
-        option = config_options.Pages()
+        option = config_options.Nav()
         self.assertRaises(config_options.ValidationError,
                           option.validate, [[], 1])
 
@@ -465,7 +580,8 @@ class PrivateTest(unittest.TestCase):
 
 class MarkdownExtensionsTest(unittest.TestCase):
 
-    def test_simple_list(self):
+    @patch('markdown.Markdown')
+    def test_simple_list(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': ['foo', 'bar']
@@ -477,7 +593,8 @@ class MarkdownExtensionsTest(unittest.TestCase):
             'mdx_configs': {}
         }, config)
 
-    def test_list_dicts(self):
+    @patch('markdown.Markdown')
+    def test_list_dicts(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': [
@@ -496,7 +613,8 @@ class MarkdownExtensionsTest(unittest.TestCase):
             }
         }, config)
 
-    def test_mixed_list(self):
+    @patch('markdown.Markdown')
+    def test_mixed_list(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': [
@@ -513,7 +631,8 @@ class MarkdownExtensionsTest(unittest.TestCase):
             }
         }, config)
 
-    def test_builtins(self):
+    @patch('markdown.Markdown')
+    def test_builtins(self, mockMd):
         option = config_options.MarkdownExtensions(builtins=['meta', 'toc'])
         config = {
             'markdown_extensions': ['foo', 'bar']
@@ -551,7 +670,8 @@ class MarkdownExtensionsTest(unittest.TestCase):
             'mdx_configs': {'toc': {'permalink': True}}
         }, config)
 
-    def test_configkey(self):
+    @patch('markdown.Markdown')
+    def test_configkey(self, mockMd):
         option = config_options.MarkdownExtensions(configkey='bar')
         config = {
             'markdown_extensions': [
@@ -579,12 +699,14 @@ class MarkdownExtensionsTest(unittest.TestCase):
             'mdx_configs': {}
         }, config)
 
-    def test_not_list(self):
+    @patch('markdown.Markdown')
+    def test_not_list(self, mockMd):
         option = config_options.MarkdownExtensions()
         self.assertRaises(config_options.ValidationError,
                           option.validate, 'not a list')
 
-    def test_invalid_config_option(self):
+    @patch('markdown.Markdown')
+    def test_invalid_config_option(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': [
@@ -596,7 +718,8 @@ class MarkdownExtensionsTest(unittest.TestCase):
             option.validate, config['markdown_extensions']
         )
 
-    def test_invalid_config_item(self):
+    @patch('markdown.Markdown')
+    def test_invalid_config_item(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': [
@@ -608,12 +731,23 @@ class MarkdownExtensionsTest(unittest.TestCase):
             option.validate, config['markdown_extensions']
         )
 
-    def test_invalid_dict_item(self):
+    @patch('markdown.Markdown')
+    def test_invalid_dict_item(self, mockMd):
         option = config_options.MarkdownExtensions()
         config = {
             'markdown_extensions': [
                 {'key1': 'value', 'key2': 'too many keys'}
             ]
+        }
+        self.assertRaises(
+            config_options.ValidationError,
+            option.validate, config['markdown_extensions']
+        )
+
+    def test_unknown_extension(self):
+        option = config_options.MarkdownExtensions()
+        config = {
+            'markdown_extensions': ['unknown']
         }
         self.assertRaises(
             config_options.ValidationError,

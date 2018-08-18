@@ -9,8 +9,11 @@ import unittest
 import tempfile
 import shutil
 import stat
+import datetime
 
-from mkdocs import nav, utils, exceptions
+from mkdocs import utils, exceptions
+from mkdocs.structure.files import File
+from mkdocs.structure.pages import Page
 from mkdocs.tests.base import dedent, load_config
 
 
@@ -60,76 +63,116 @@ class UtilsTests(unittest.TestCase):
             self.assertEqual(is_html, expected_result)
 
     def test_create_media_urls(self):
-        pages = [
-            {'Home': 'index.md'},
-            {'About': 'about.md'},
-            {'Sub': [
-                {'Sub Home': 'index.md'},
-                {'Sub About': 'about.md'},
 
-            ]}
-        ]
         expected_results = {
-            'https://media.cdn.org/jq.js': 'https://media.cdn.org/jq.js',
-            'http://media.cdn.org/jquery.js': 'http://media.cdn.org/jquery.js',
-            '//media.cdn.org/jquery.js': '//media.cdn.org/jquery.js',
-            'media.cdn.org/jquery.js': './media.cdn.org/jquery.js',
-            'local/file/jquery.js': './local/file/jquery.js',
-            'image.png': './image.png',
+            'https://media.cdn.org/jq.js': [
+                'https://media.cdn.org/jq.js',
+                'https://media.cdn.org/jq.js',
+                'https://media.cdn.org/jq.js'
+            ],
+            'http://media.cdn.org/jquery.js': [
+                'http://media.cdn.org/jquery.js',
+                'http://media.cdn.org/jquery.js',
+                'http://media.cdn.org/jquery.js'
+            ],
+            '//media.cdn.org/jquery.js': [
+                '//media.cdn.org/jquery.js',
+                '//media.cdn.org/jquery.js',
+                '//media.cdn.org/jquery.js'
+            ],
+            'media.cdn.org/jquery.js': [
+                'media.cdn.org/jquery.js',
+                'media.cdn.org/jquery.js',
+                '../media.cdn.org/jquery.js'
+            ],
+            'local/file/jquery.js': [
+                'local/file/jquery.js',
+                'local/file/jquery.js',
+                '../local/file/jquery.js'
+            ],
+            'local\\windows\\file\\jquery.js': [
+                'local/windows/file/jquery.js',
+                'local/windows/file/jquery.js',
+                '../local/windows/file/jquery.js'
+            ],
+            'image.png': [
+                'image.png',
+                'image.png',
+                '../image.png'
+            ],
+            'style.css?v=20180308c': [
+                'style.css?v=20180308c',
+                'style.css?v=20180308c',
+                '../style.css?v=20180308c'
+            ]
         }
-        site_navigation = nav.SiteNavigation(load_config(pages=pages))
-        for path, expected_result in expected_results.items():
-            urls = utils.create_media_urls(site_navigation, [path])
-            self.assertEqual(urls[0], expected_result)
 
-    def test_create_relative_media_url_sub_index(self):
-        '''
-        test special case where there's a sub/index.md page
-        '''
-
+        cfg = load_config(use_directory_urls=False)
         pages = [
-            {'Home': 'index.md'},
-            {'Sub': [
-                {'Sub Home': '/subpage/index.md'},
-
-            ]}
+            Page('Home', File('index.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg),
+            Page('About', File('about.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg),
+            Page('FooBar', File('foo/bar.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg)
         ]
-        site_navigation = nav.SiteNavigation(load_config(pages=pages))
-        site_navigation.url_context.set_current_url('/subpage/')
-        site_navigation.file_context.current_file = "subpage/index.md"
 
-        def assertPathGenerated(declared, expected):
-            url = utils.create_relative_media_url(site_navigation, declared)
-            self.assertEqual(url, expected)
+        for i, page in enumerate(pages):
+            urls = utils.create_media_urls(expected_results.keys(), page)
+            self.assertEqual([v[i] for v in expected_results.values()], urls)
 
-        assertPathGenerated("img.png", "./img.png")
-        assertPathGenerated("./img.png", "./img.png")
-        assertPathGenerated("/img.png", "../img.png")
+    def test_create_media_urls_use_directory_urls(self):
 
-    def test_create_relative_media_url_sub_index_windows(self):
-        '''
-        test special case where there's a sub/index.md page and we are on Windows.
-        current_file paths uses backslash in Windows
-        '''
+        expected_results = {
+            'https://media.cdn.org/jq.js': [
+                'https://media.cdn.org/jq.js',
+                'https://media.cdn.org/jq.js',
+                'https://media.cdn.org/jq.js'
+            ],
+            'http://media.cdn.org/jquery.js': [
+                'http://media.cdn.org/jquery.js',
+                'http://media.cdn.org/jquery.js',
+                'http://media.cdn.org/jquery.js'
+            ],
+            '//media.cdn.org/jquery.js': [
+                '//media.cdn.org/jquery.js',
+                '//media.cdn.org/jquery.js',
+                '//media.cdn.org/jquery.js'
+            ],
+            'media.cdn.org/jquery.js': [
+                'media.cdn.org/jquery.js',
+                '../media.cdn.org/jquery.js',
+                '../../media.cdn.org/jquery.js'
+            ],
+            'local/file/jquery.js': [
+                'local/file/jquery.js',
+                '../local/file/jquery.js',
+                '../../local/file/jquery.js'
+            ],
+            'local\\windows\\file\\jquery.js': [
+                'local/windows/file/jquery.js',
+                '../local/windows/file/jquery.js',
+                '../../local/windows/file/jquery.js'
+            ],
+            'image.png': [
+                'image.png',
+                '../image.png',
+                '../../image.png'
+            ],
+            'style.css?v=20180308c': [
+                'style.css?v=20180308c',
+                '../style.css?v=20180308c',
+                '../../style.css?v=20180308c'
+            ]
+        }
 
+        cfg = load_config(use_directory_urls=True)
         pages = [
-            {'Home': 'index.md'},
-            {'Sub': [
-                {'Sub Home': '/level1/level2/index.md'},
-
-            ]}
+            Page('Home', File('index.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg),
+            Page('About', File('about.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg),
+            Page('FooBar', File('foo/bar.md',  cfg['docs_dir'], cfg['site_dir'], cfg['use_directory_urls']), cfg)
         ]
-        site_navigation = nav.SiteNavigation(load_config(pages=pages))
-        site_navigation.url_context.set_current_url('/level1/level2')
-        site_navigation.file_context.current_file = "level1\\level2\\index.md"
 
-        def assertPathGenerated(declared, expected):
-            url = utils.create_relative_media_url(site_navigation, declared)
-            self.assertEqual(url, expected)
-
-        assertPathGenerated("img.png", "./img.png")
-        assertPathGenerated("./img.png", "./img.png")
-        assertPathGenerated("/img.png", "../img.png")
+        for i, page in enumerate(pages):
+            urls = utils.create_media_urls(expected_results.keys(), page)
+            self.assertEqual([v[i] for v in expected_results.values()], urls)
 
     def test_reduce_list(self):
         self.assertEqual(
@@ -321,3 +364,91 @@ class UtilsTests(unittest.TestCase):
                     os.chmod(src, stat.S_IRUSR | stat.S_IWUSR)
             shutil.rmtree(src_dir)
             shutil.rmtree(dst_dir)
+
+    def test_mm_meta_data(self):
+        doc = dedent(
+            """
+            Title: Foo Bar
+            Date: 2018-07-10
+            Summary: Line one
+                Line two
+            Tags: foo
+            Tags: bar
+
+            Doc body
+            """
+        )
+        self.assertEqual(
+            utils.meta.get_data(doc),
+            (
+                "Doc body",
+                {
+                    'title': 'Foo Bar',
+                    'date': '2018-07-10',
+                    'summary': 'Line one Line two',
+                    'tags': 'foo bar'
+                }
+            )
+        )
+
+    def test_mm_meta_data_blank_first_line(self):
+        doc = '\nfoo: bar\nDoc body'
+        self.assertEqual(utils.meta.get_data(doc), (doc.lstrip(), {}))
+
+    def test_yaml_meta_data(self):
+        doc = dedent(
+            """
+            ---
+            Title: Foo Bar
+            Date: 2018-07-10
+            Summary: Line one
+                Line two
+            Tags:
+                - foo
+                - bar
+            ---
+            Doc body
+            """
+        )
+        self.assertEqual(
+            utils.meta.get_data(doc),
+            (
+                "Doc body",
+                {
+                    'Title': 'Foo Bar',
+                    'Date': datetime.date(2018, 7, 10),
+                    'Summary': 'Line one Line two',
+                    'Tags': ['foo', 'bar']
+                }
+            )
+        )
+
+    def test_yaml_meta_data_not_dict(self):
+        doc = dedent(
+            """
+            ---
+            - List item
+            ---
+            Doc body
+            """
+        )
+        self.assertEqual(utils.meta.get_data(doc), (doc, {}))
+
+    def test_yaml_meta_data_invalid(self):
+        doc = dedent(
+            """
+            ---
+            foo: bar: baz
+            ---
+            Doc body
+            """
+        )
+        self.assertEqual(utils.meta.get_data(doc), (doc, {}))
+
+    def test_no_meta_data(self):
+        doc = dedent(
+            """
+            Doc body
+            """
+        )
+        self.assertEqual(utils.meta.get_data(doc), (doc, {}))

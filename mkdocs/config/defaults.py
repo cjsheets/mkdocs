@@ -19,9 +19,10 @@ DEFAULT_SCHEMA = (
     # The title to use for the documentation
     ('site_name', config_options.Type(utils.string_types, required=True)),
 
-    # Defines the structure of the navigation and which markdown files are
-    # included in the build.
-    ('pages', config_options.Pages()),
+    # Defines the structure of the navigation.
+    ('nav', config_options.Nav()),
+    # TODO: remove this when the `pages` config setting is fully deprecated.
+    ('pages', config_options.Nav()),
 
     # The full URL to where the documentation will be hosted
     ('site_url', config_options.URL()),
@@ -40,10 +41,6 @@ DEFAULT_SCHEMA = (
 
     # The directory where the site will be built to
     ('site_dir', config_options.SiteDir(default='site')),
-
-    # The directory of a theme to use if not using one of the builtin MkDocs
-    # themes.
-    ('theme_dir', config_options.ThemeDir(exists=True)),
 
     # A copyright notice to add to the footer of documentation.
     ('copyright', config_options.Type(utils.string_types)),
@@ -68,7 +65,8 @@ DEFAULT_SCHEMA = (
 
     # A name to use for the link to the project source repo.
     # Default, If repo_url is unset then None, otherwise
-    # "GitHub" or "Bitbucket" for known url or Hostname for unknown urls.
+    # "GitHub", "Bitbucket" or "GitLab" for known url or Hostname
+    # for unknown urls.
     ('repo_name', config_options.Type(utils.string_types)),
 
     # Specify a URI to the docs dir in the project source repo, relative to the
@@ -79,9 +77,8 @@ DEFAULT_SCHEMA = (
 
     # Specify which css or javascript files from the docs directory should be
     # additionally included in the site.
-    ('extra_css', config_options.Extras(file_match=utils.is_css_file, default=[])),
-    ('extra_javascript', config_options.Extras(
-        file_match=utils.is_javascript_file, default=[])),
+    ('extra_css', config_options.Type(list, default=[])),
+    ('extra_javascript', config_options.Type(list, default=[])),
 
     # Similar to the above, but each template (HTML or XML) will be build with
     # Jinja2 and the global context.

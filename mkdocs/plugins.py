@@ -18,7 +18,7 @@ log = logging.getLogger('mkdocs.plugins')
 
 
 EVENTS = (
-    'config', 'pre_build', 'nav', 'env', 'pre_template', 'template_context',
+    'config', 'pre_build', 'files', 'nav', 'env', 'pre_template', 'template_context',
     'post_template', 'pre_page', 'page_read_source', 'page_markdown',
     'page_content', 'page_context', 'post_page', 'post_build', 'serve'
 )
@@ -42,10 +42,10 @@ class BasePlugin(object):
     config_scheme = ()
     config = {}
 
-    def load_config(self, options):
+    def load_config(self, options, config_file_path=None):
         """ Load config from a dict of options. Returns a tuple of (errors, warnings)."""
 
-        self.config = Config(schema=self.config_scheme)
+        self.config = Config(schema=self.config_scheme, config_file_path=config_file_path)
         self.config.load_dict(options)
 
         return self.config.validate()

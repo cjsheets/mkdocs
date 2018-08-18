@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import logging
 import os
+import sys
+from yaml import YAMLError
 
 from mkdocs import exceptions
 from mkdocs import utils
@@ -21,13 +23,21 @@ class Config(utils.UserDict):
     for running validation on the structure and contents.
     """
 
-    def __init__(self, schema):
+    def __init__(self, schema, config_file_path=None):
         """
         The schema is a Python dict which maps the config name to a validator.
         """
 
         self._schema = schema
         self._schema_keys = set(dict(schema).keys())
+        # Ensure config_file_path is a Unicode string
+        if config_file_path is not None and not isinstance(config_file_path, utils.text_type):
+            try:
+                # Assume config_file_path is encoded with the file system encoding.
+                config_file_path = config_file_path.decode(encoding=sys.getfilesystemencoding())
+            except UnicodeDecodeError:
+                raise ValidationError("config_file_path is not a Unicode string.")
+        self.config_file_path = config_file_path
         self.data = {}
 
         self.user_configs = []
@@ -120,7 +130,13 @@ class Config(utils.UserDict):
         self.data.update(patch)
 
     def load_file(self, config_file):
-        return self.load_dict(utils.yaml_load(config_file))
+        try:
+            return self.load_dict(utils.yaml_load(config_file))
+        except YAMLError as e:
+            # MkDocs knows and understands ConfigurationErrors
+            raise exceptions.ConfigurationError(
+                "MkDocs encountered as error parsing the configuration file: {}".format(e)
+            )
 
 
 def _open_config_file(config_file):
@@ -172,7 +188,7 @@ def load_config(config_file=None, **kwargs):
 
     # Initialise the config with the default schema .
     from mkdocs import config
-    cfg = Config(schema=config.DEFAULT_SCHEMA)
+    cfg = Config(schema=config.DEFAULT_SCHEMA, config_file_path=options['config_file_path'])
     # First load the config file
     cfg.load_file(config_file)
     # Then load the options to overwrite anything in the config.
