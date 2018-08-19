@@ -2,6 +2,7 @@ import json
 import jinja2
 import pprint
 from inspect import getmembers
+from jinja2 import environmentfilter, Environment
 
 from mkdocs.utils import normalize_url
 
@@ -18,6 +19,7 @@ debug_attr_fmt = '''name:  %s
 type:  %r
 value: %r'''
 
+@environmentfilter
 def debugObj(value):
     begin = "<pre class='debug'>\n"
     end = "\n</pre>"
