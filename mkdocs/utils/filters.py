@@ -18,7 +18,7 @@ debug_attr_fmt = '''name:  %s
 type:  %r
 value: %r'''
 
-def debugObj(obj):
+def debugObj(value):
     begin = "<pre class='debug'>\n"
     end = "\n</pre>"
 
