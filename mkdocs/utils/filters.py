@@ -20,7 +20,7 @@ type:  %r
 value: %r'''
 
 @environmentfilter
-def debugObj(value):
+def debugObj(env, value):
     begin = "<pre class='debug'>\n"
     end = "\n</pre>"
 
