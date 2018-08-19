@@ -14,10 +14,24 @@ def debug(str):
     print str
     return ''
 
+debug_attr_fmt = '''name:  %s
+type:  %r
+value: %r'''
 
 def debugObj(obj):
-    pprint.pprint(obj)
-    return ''
+    begin = "<pre class='debug'>\n"
+    end = "\n</pre>"
+
+    result = ["{% filter escape %}"]
+    for attr_name in dir(value):
+        if attr_name[0] == "_":
+            continue
+        a = getattr(value, attr_name)
+        result.append(debug_attr_fmt % (attr_name, type(a), a))
+    result.append("{% endfilter %} ")
+    tmpl = Environment().from_string("\n\n".join(result))
+
+    return begin + tmpl.render() + end
 
 def debugMembers(obj):
     pprint.pprint(getmembers(obj))
