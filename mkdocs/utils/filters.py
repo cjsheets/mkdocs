@@ -16,6 +16,10 @@ def debug(str):
 
 
 def debugObj(obj):
+    pprint.pprint(obj)
+    return ''
+
+def debugMembers(obj):
     pprint.pprint(getmembers(obj))
     return ''
 
